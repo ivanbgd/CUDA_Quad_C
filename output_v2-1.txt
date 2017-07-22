@@ -1,0 +1,296 @@
+Intel i7 @ 4 GHz vs Nvidia GeForce GTX TITAN Black (Kepler CC v3.5)
+
+#define NUM_OF_GPU_THREADS 1024
+===============================
+
+My code is written in such a way that the block size has to be 1024, because of total loop unrolling.
+
+Faster than v1, plus works with large arrays. Slightly less accurate, but not much.
+
+
+nvcc -lm -O1 -o quad2 quad2.cu	<-- This level of gcc optimization gives the best result. Of course, that only influences sequential code, not parallel - I checked.
+
+$ nvcc -lm -O1 -o quad2 quad2.cu
+$ ./quad2
+
+QUAD:
+  Estimate the integral of f(x) from A to B.
+  f(x) = 50 / ( pi * ( 2500 * x * x + 1 ) ).
+
+  A        = 0.000000
+  B        = 10.000000
+  N        = 10000000
+
+  Sequential estimate quadratic rule   =       0.4993712889191264
+  Parallel estimate quadratic rule     =       0.4993712889191042
+Sequential time quadratic rule   = 159.291428 ms
+Parallel time quadratic rule     = 2.892480 ms
+        Test PASSED!
+
+  Sequential estimate trapezoidal rule =       0.4993633810128298
+  Parallel estimate trapezoidal rule   =       0.4993633810127950
+Sequential time trapezoidal rule = 65.947166 ms
+Parallel time trapezoidal rule   = 1.880960 ms
+        Test PASSED!
+
+  Sequential estimate Simpson 1/3 rule =       0.4993633809916793
+  Parallel estimate Simpson 1/3 rule   =       0.4993633809915746
+Sequential time Simpson 1/3 rule = 66.382591 ms
+Parallel time Simpson 1/3 rule   = 2.019360 ms
+        Test PASSED!
+
+
+  Normal end of execution.
+
+
+  
+$ nvprof ./quad2
+
+QUAD:
+  Estimate the integral of f(x) from A to B.
+  f(x) = 50 / ( pi * ( 2500 * x * x + 1 ) ).
+
+  A        = 0.000000
+  B        = 10.000000
+  N        = 10000000
+
+==26044== NVPROF is profiling process 26044, command: ./quad2
+  Sequential estimate quadratic rule   =       0.4993712889191264
+  Parallel estimate quadratic rule     =       0.4993712889191042
+Sequential time quadratic rule   = 162.089828 ms
+Parallel time quadratic rule     = 2.848928 ms
+        Test PASSED!
+
+  Sequential estimate trapezoidal rule =       0.4993633810128298
+  Parallel estimate trapezoidal rule   =       0.4993633810127950
+Sequential time trapezoidal rule = 65.922943 ms
+Parallel time trapezoidal rule   = 1.957888 ms
+        Test PASSED!
+
+  Sequential estimate Simpson 1/3 rule =       0.4993633809916793
+  Parallel estimate Simpson 1/3 rule   =       0.4993633809915746
+Sequential time Simpson 1/3 rule = 67.254082 ms
+Parallel time Simpson 1/3 rule   = 2.062336 ms
+        Test PASSED!
+
+
+  Normal end of execution.
+
+==26044== Profiling application: ./quad2
+==26044== Profiling result:
+Time(%)      Time     Calls       Avg       Min       Max  Name
+ 41.73%  2.6366ms         1  2.6366ms  2.6366ms  2.6366ms  parQuadKernel(double*, unsigned int, double, double)
+ 29.75%  1.8800ms         1  1.8800ms  1.8800ms  1.8800ms  parSimpKernel(double*, unsigned int, double, double)
+ 28.07%  1.7734ms         1  1.7734ms  1.7734ms  1.7734ms  parTrapKernel(double*, unsigned int, double, double)
+  0.37%  23.328us         6  3.8880us  3.5200us  4.4160us  sumReductionKernel(double*, double*, unsigned int)
+  0.08%  5.3120us         3  1.7700us  1.7600us  1.7920us  [CUDA memcpy DtoH]
+
+==26044== API calls:
+Time(%)      Time     Calls       Avg       Min       Max  Name
+ 95.00%  141.21ms         1  141.21ms  141.21ms  141.21ms  cudaDeviceSynchronize
+  4.12%  6.1261ms         3  2.0420ms  1.7191ms  2.5795ms  cudaMemcpy
+  0.27%  406.15us         6  67.691us  64.819us  75.070us  cudaMalloc
+  0.27%  402.24us        83  4.8460us     297ns  171.21us  cuDeviceGetAttribute
+  0.17%  248.39us         6  41.399us  35.265us  52.914us  cudaFree
+  0.05%  67.893us         1  67.893us  67.893us  67.893us  cuDeviceTotalMem
+  0.04%  60.132us         9  6.6810us  3.0100us  12.553us  cudaLaunch
+  0.03%  41.477us         1  41.477us  41.477us  41.477us  cuDeviceGetName
+  0.01%  21.932us        12  1.8270us     924ns  4.0920us  cudaEventRecord
+  0.01%  21.173us         6  3.5280us  2.7020us  4.3470us  cudaEventSynchronize
+  0.01%  11.224us        12     935ns     431ns  3.4590us  cudaEventCreate
+  0.00%  5.7280us        12     477ns     327ns     875ns  cudaEventDestroy
+  0.00%  5.1970us        30     173ns      90ns  1.5370us  cudaSetupArgument
+  0.00%  5.0180us         6     836ns     655ns  1.2010us  cudaEventElapsedTime
+  0.00%  2.6040us         9     289ns     133ns     672ns  cudaConfigureCall
+  0.00%  2.3990us         2  1.1990us     771ns  1.6280us  cuDeviceGetCount
+  0.00%  1.0380us         2     519ns     372ns     666ns  cuDeviceGet
+
+  
+  
+***************************  
+***			RUN			***
+***************************
+  
+  
+
+$ nvcc -lm -O1 -o quad2 quad2.cu
+$ bash run
+
+QUAD:
+  Estimate the integral of f(x) from A to B.
+  f(x) = 50 / ( pi * ( 2500 * x * x + 1 ) ).
+
+  A        = 0.000000
+  B        = 1000.000000
+  N        = 1000
+
+  Sequential estimate quadratic rule   =      15.9259362504970685
+  Parallel estimate quadratic rule     =      15.9259362504970614
+Sequential time quadratic rule   = 0.028704 ms
+Parallel time quadratic rule     = 0.219744 ms
+        Test PASSED!
+
+  Sequential estimate trapezoidal rule =       7.9682100024577442
+  Parallel estimate trapezoidal rule   =       7.9682100024577398
+Sequential time trapezoidal rule = 0.012320 ms
+Parallel time trapezoidal rule   = 0.180544 ms
+        Test PASSED!
+
+  Sequential estimate Simpson 1/3 rule =       5.3173721411854942
+  Parallel estimate Simpson 1/3 rule   =       5.3173721411854880
+Sequential time Simpson 1/3 rule = 0.013184 ms
+Parallel time Simpson 1/3 rule   = 0.174560 ms
+        Test PASSED!
+
+
+  Normal end of execution.
+
+
+QUAD:
+  Estimate the integral of f(x) from A to B.
+  f(x) = 50 / ( pi * ( 2500 * x * x + 1 ) ).
+
+  A        = 100.000000
+  B        = 10000.000000
+  N        = 1000
+
+  Sequential estimate quadratic rule   =       0.0000662178069136
+  Parallel estimate quadratic rule     =       0.0000662178069136
+Sequential time quadratic rule   = 0.017120 ms
+Parallel time quadratic rule     = 0.161248 ms
+        Test PASSED!
+
+  Sequential estimate trapezoidal rule =       0.0000631285150278
+  Parallel estimate trapezoidal rule   =       0.0000631285150278
+Sequential time trapezoidal rule = 0.007296 ms
+Parallel time trapezoidal rule   = 0.135840 ms
+        Test PASSED!
+
+  Sequential estimate Simpson 1/3 rule =       0.0000630253033787
+  Parallel estimate Simpson 1/3 rule   =       0.0000630253033787
+Sequential time Simpson 1/3 rule = 0.007904 ms
+Parallel time Simpson 1/3 rule   = 0.132608 ms
+        Test PASSED!
+
+
+  Normal end of execution.
+
+
+QUAD:
+  Estimate the integral of f(x) from A to B.
+  f(x) = 50 / ( pi * ( 2500 * x * x + 1 ) ).
+
+  A        = 0.000000
+  B        = 1000.000000
+  N        = 1000000
+
+  Sequential estimate quadratic rule   =       0.5079508809664323
+  Parallel estimate quadratic rule     =       0.5079508809664214
+Sequential time quadratic rule   = 15.927968 ms
+Parallel time quadratic rule     = 0.462656 ms
+        Test PASSED!
+
+  Sequential estimate trapezoidal rule =       0.4999936337959058
+  Parallel estimate trapezoidal rule   =       0.4999936337959110
+Sequential time trapezoidal rule = 6.593088 ms
+Parallel time trapezoidal rule   = 0.340128 ms
+        Test PASSED!
+
+  Sequential estimate Simpson 1/3 rule =       0.4999936337938103
+  Parallel estimate Simpson 1/3 rule   =       0.4999936337937889
+Sequential time Simpson 1/3 rule = 6.931616 ms
+Parallel time Simpson 1/3 rule   = 0.350432 ms
+        Test PASSED!
+
+
+  Normal end of execution.
+
+
+QUAD:
+  Estimate the integral of f(x) from A to B.
+  f(x) = 50 / ( pi * ( 2500 * x * x + 1 ) ).
+
+  A        = 1000.000000
+  B        = 10000.000000
+  N        = 1000000
+
+  Sequential estimate quadratic rule   =       0.0000057296011553
+  Parallel estimate quadratic rule     =       0.0000057296011553
+Sequential time quadratic rule   = 15.927520 ms
+Parallel time quadratic rule     = 0.463776 ms
+        Test PASSED!
+
+  Sequential estimate trapezoidal rule =       0.0000057295773776
+  Parallel estimate trapezoidal rule   =       0.0000057295773776
+Sequential time trapezoidal rule = 6.592960 ms
+Parallel time trapezoidal rule   = 0.337888 ms
+        Test PASSED!
+
+  Sequential estimate Simpson 1/3 rule =       0.0000057295771865
+  Parallel estimate Simpson 1/3 rule   =       0.0000057295771865
+Sequential time Simpson 1/3 rule = 6.931840 ms
+Parallel time Simpson 1/3 rule   = 0.348704 ms
+        Test PASSED!
+
+
+  Normal end of execution.
+
+
+QUAD:
+  Estimate the integral of f(x) from A to B.
+  f(x) = 50 / ( pi * ( 2500 * x * x + 1 ) ).
+
+  A        = 0.000000
+  B        = 1000.000000
+  N        = 1000000000
+
+  Sequential estimate quadratic rule   =       0.5000015910565593
+  Parallel estimate quadratic rule     =       0.5000015469881648
+Sequential time quadratic rule   = 15922.660156 ms
+Parallel time quadratic rule     = 258.036865 ms
+        Test PASSED!
+
+  Sequential estimate trapezoidal rule =       0.4999936338094476
+  Parallel estimate trapezoidal rule   =       0.4999935942371799
+Sequential time trapezoidal rule = 6592.173340 ms
+Parallel time trapezoidal rule   = 149.092834 ms
+        Test PASSED!
+
+  Sequential estimate Simpson 1/3 rule =       0.4999936338099849
+  Parallel estimate Simpson 1/3 rule   =       0.4999935942371811
+Sequential time Simpson 1/3 rule = 6732.010254 ms
+Parallel time Simpson 1/3 rule   = 158.012314 ms
+        Test PASSED!
+
+
+  Normal end of execution.
+
+
+QUAD:
+  Estimate the integral of f(x) from A to B.
+  f(x) = 50 / ( pi * ( 2500 * x * x + 1 ) ).
+
+  A        = 100.000000
+  B        = 10000.000000
+  N        = 1000000000
+
+  Sequential estimate quadratic rule   =       0.0000630253597041
+  Parallel estimate quadratic rule     =       0.0000630214428082
+Sequential time quadratic rule   = 15922.495117 ms
+Parallel time quadratic rule     = 255.529541 ms
+        Test PASSED!
+
+  Sequential estimate trapezoidal rule =       0.0000630253566149
+  Parallel estimate trapezoidal rule   =       0.0000630214399794
+Sequential time trapezoidal rule = 6592.111816 ms
+Parallel time trapezoidal rule   = 147.465820 ms
+        Test PASSED!
+
+  Sequential estimate Simpson 1/3 rule =       0.0000630253566147
+  Parallel estimate Simpson 1/3 rule   =       0.0000630214399795
+Sequential time Simpson 1/3 rule = 6641.604004 ms
+Parallel time Simpson 1/3 rule   = 158.096252 ms
+        Test PASSED!
+
+
+  Normal end of execution.
